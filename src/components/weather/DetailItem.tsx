@@ -1,9 +1,4 @@
-interface DetailItemPropsType {
-    icon?: React.ReactNode;
-    label: string;
-    value: string;
-    subValue?: string;
-}
+import type { DetailItemPropsType } from "@/types/component-types";
 
 /** Displays a labeled weather detail with an optional icon and sub-value. */
 export function DetailItem({ icon, label, value, subValue }: DetailItemPropsType) {

@@ -1,10 +1,6 @@
 import { MapPin, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-interface WelcomeScreenPropsType {
-  onUseCurrentLocation: () => void;
-  locationError: string | null;
-}
+import type { WelcomeScreenPropsType } from "@/types/component-types";
 
 export function WelcomeScreen({
   onUseCurrentLocation,

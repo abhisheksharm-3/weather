@@ -1,21 +1,9 @@
 import { useMemo } from "react";
-import type { ForecastResponseType, ForecastItemType, UnitsType } from "@/types/weather-types";
+import type { ForecastItemType } from "@/types/weather-types";
+import type { ForecastPropsType, DailySummaryType } from "@/types/component-types";
 import { getWeatherIconUrl, formatTime } from "@/lib/weather-formatters";
 import { getTempUnit, getSpeedUnit } from "@/lib/weather-constants";
 import { Droplets, Wind, Thermometer } from "lucide-react";
-
-interface ForecastPropsType {
-  data: ForecastResponseType;
-  units: UnitsType;
-}
-
-interface DailySummaryType {
-  minTemp: number;
-  maxTemp: number;
-  icon: string;
-  condition: string;
-  pop: number;
-}
 
 /** Groups forecast items by date string (YYYY-MM-DD). */
 function groupByDay(list: ForecastItemType[]): Record<string, ForecastItemType[]> {
@@ -163,8 +151,8 @@ export function Forecast({ data, units }: ForecastPropsType) {
                 <div
                   key={item.dt}
                   className={`flex flex-col items-center py-4 px-3 sm:px-4 min-w-[60px] sm:min-w-[72px] ${isNow
-                    ? "bg-[hsl(var(--muted))]"
-                    : "hover:bg-[hsl(var(--muted))]/50"
+                      ? "bg-[hsl(var(--muted))]"
+                      : "hover:bg-[hsl(var(--muted))]/50"
                     } transition-colors`}
                 >
                   <span

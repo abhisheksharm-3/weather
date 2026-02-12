@@ -1,10 +1,5 @@
 import { Button } from "@/components/ui/button";
-import type { UnitsType } from "@/types/weather-types";
-
-interface UnitTogglePropsType {
-    units: UnitsType;
-    onToggle: (units: UnitsType) => void;
-}
+import type { UnitTogglePropsType } from "@/types/component-types";
 
 export function UnitToggle({ units, onToggle }: UnitTogglePropsType) {
     return (

@@ -1,5 +1,11 @@
 export type UnitsType = "metric" | "imperial";
 
+export type ThemeType = "light" | "dark";
+
+export type IconSizeType = "1x" | "2x" | "4x";
+
+export type AqiInfoType = { label: string; color: string };
+
 export interface WeatherConditionType {
     id: number;
     main: string;

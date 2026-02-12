@@ -1,31 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
-export type UnitsType = "metric" | "imperial";
-
-export type ThemeType = "light" | "dark";
-
-interface LocationType {
-  lat: number;
-  lon: number;
-  name: string;
-}
-
-interface WeatherStateType {
-  location: LocationType | null;
-  isLoadingLocation: boolean;
-  locationError: string | null;
-  units: UnitsType;
-  theme: ThemeType;
-  setLocation: (lat: number, lon: number, name: string) => void;
-  clearLocation: () => void;
-  setIsLoadingLocation: (isLoading: boolean) => void;
-  setLocationError: (error: string | null) => void;
-  setUnits: (units: UnitsType) => void;
-  setTheme: (theme: ThemeType) => void;
-  toggleTheme: () => void;
-  requestCurrentLocation: () => void;
-}
+import type { ThemeType } from "@/types/weather-types";
+import type { WeatherStateType } from "@/types/store-types";
 
 function getInitialTheme(): ThemeType {
   const stored = localStorage.getItem("theme") as ThemeType | null;

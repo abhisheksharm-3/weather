@@ -3,13 +3,8 @@ import { Search, MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useGeocode } from "@/hooks/useWeather";
+import type { SearchBarPropsType } from "@/types/component-types";
 import type { GeocodingResultType } from "@/types/weather-types";
-
-interface SearchBarPropsType {
-    onLocationSelect: (lat: number, lon: number, name: string) => void;
-    onUseCurrentLocation: () => void;
-    isLoadingLocation?: boolean;
-}
 
 export function SearchBar({
     onLocationSelect,

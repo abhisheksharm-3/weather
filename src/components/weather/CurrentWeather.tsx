@@ -1,14 +1,8 @@
 import { Droplets, Wind, Eye, Gauge, Sunrise, Sunset } from "lucide-react";
-import type { CurrentWeatherResponseType, UnitsType } from "@/types/weather-types";
+import type { CurrentWeatherPropsType } from "@/types/component-types";
 import { getWeatherIconUrl, formatTime, formatVisibility } from "@/lib/weather-formatters";
 import { getWindDirection, getTempUnit, getSpeedUnit } from "@/lib/weather-constants";
 import { DetailItem } from "./DetailItem";
-
-interface CurrentWeatherPropsType {
-  data: CurrentWeatherResponseType;
-  units: UnitsType;
-  locationName?: string;
-}
 
 export function CurrentWeather({
   data,

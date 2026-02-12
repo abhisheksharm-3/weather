@@ -1,23 +1,5 @@
-import type { AirPollutionResponseType, AirQualityComponentsType } from "@/types/weather-types";
+import type { AirPollutionPropsType, PollutantInfoType, PollutantLevelType } from "@/types/component-types";
 import { getAQILabel } from "@/lib/weather-constants";
-
-interface AirPollutionPropsType {
-  data: AirPollutionResponseType;
-}
-
-interface PollutantInfoType {
-  name: string;
-  key: keyof AirQualityComponentsType;
-  unit: string;
-  description: string;
-  thresholds: { good: number; moderate: number; unhealthy: number };
-}
-
-interface PollutantLevelType {
-  level: string;
-  color: string;
-  barColor: string;
-}
 
 const POLLUTANTS: PollutantInfoType[] = [
   {

@@ -1,10 +1,6 @@
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-interface ErrorScreenPropsType {
-  message: string;
-  onRetry: () => void;
-}
+import type { ErrorScreenPropsType } from "@/types/component-types";
 
 export function ErrorScreen({ message, onRetry }: ErrorScreenPropsType) {
   return (

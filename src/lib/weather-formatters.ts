@@ -1,6 +1,4 @@
-import type { UnitsType } from "@/types/weather-types";
-
-type IconSizeType = "1x" | "2x" | "4x";
+import type { UnitsType, IconSizeType } from "@/types/weather-types";
 
 const ICON_SIZE_SUFFIX: Record<IconSizeType, string> = {
     "1x": "",

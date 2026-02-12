@@ -1,6 +1,4 @@
-import type { UnitsType } from "@/types/weather-types";
-
-type AqiInfoType = { label: string; color: string };
+import type { UnitsType, AqiInfoType } from "@/types/weather-types";
 
 const WIND_DIRECTIONS = [
     "N", "NNE", "NE", "ENE",
