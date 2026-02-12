@@ -1,7 +1,7 @@
 import { CloudSun } from "lucide-react";
-import { SearchBar } from "@/components/SearchBar";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { UnitToggle } from "@/components/UnitToggle";
+import { SearchBar } from "@/components/search/SearchBar";
+import { ThemeToggle } from "@/components/controls/ThemeToggle";
+import { UnitToggle } from "@/components/controls/UnitToggle";
 import { useWeatherStore } from "@/store/weatherStore";
 
 export function Header() {

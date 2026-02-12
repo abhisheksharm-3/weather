@@ -1,55 +1,64 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-interface Location {
+export type UnitsType = "metric" | "imperial";
+
+export type ThemeType = "light" | "dark";
+
+interface LocationType {
   lat: number;
   lon: number;
   name: string;
 }
 
-type Units = "metric" | "imperial";
-
-interface WeatherState {
-  // Location
-  location: Location | null;
+interface WeatherStateType {
+  location: LocationType | null;
   isLoadingLocation: boolean;
   locationError: string | null;
-
-  // Units
-  units: Units;
-
-  // Actions
+  units: UnitsType;
+  theme: ThemeType;
   setLocation: (lat: number, lon: number, name: string) => void;
   clearLocation: () => void;
-  setIsLoadingLocation: (loading: boolean) => void;
+  setIsLoadingLocation: (isLoading: boolean) => void;
   setLocationError: (error: string | null) => void;
-  setUnits: (units: Units) => void;
+  setUnits: (units: UnitsType) => void;
+  setTheme: (theme: ThemeType) => void;
+  toggleTheme: () => void;
   requestCurrentLocation: () => void;
 }
 
-export const useWeatherStore = create<WeatherState>()(
+function getInitialTheme(): ThemeType {
+  const stored = localStorage.getItem("theme") as ThemeType | null;
+  if (stored) return stored;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function applyTheme(theme: ThemeType): void {
+  const root = document.documentElement;
+  root.classList.remove("light", "dark");
+  root.classList.add(theme);
+  localStorage.setItem("theme", theme);
+}
+
+export const useWeatherStore = create<WeatherStateType>()(
   persist(
     (set, get) => ({
-      // Initial state
       location: null,
       isLoadingLocation: false,
       locationError: null,
       units: "metric",
+      theme: getInitialTheme(),
 
-      // Actions
       setLocation: (lat, lon, name) => {
-        set({
-          location: { lat, lon, name },
-          locationError: null,
-        });
+        set({ location: { lat, lon, name }, locationError: null });
       },
 
       clearLocation: () => {
         set({ location: null });
       },
 
-      setIsLoadingLocation: (loading) => {
-        set({ isLoadingLocation: loading });
+      setIsLoadingLocation: (isLoading) => {
+        set({ isLoadingLocation: isLoading });
       },
 
       setLocationError: (error) => {
@@ -58,6 +67,17 @@ export const useWeatherStore = create<WeatherState>()(
 
       setUnits: (units) => {
         set({ units });
+      },
+
+      setTheme: (theme) => {
+        applyTheme(theme);
+        set({ theme });
+      },
+
+      toggleTheme: () => {
+        const next = get().theme === "light" ? "dark" : "light";
+        applyTheme(next);
+        set({ theme: next });
       },
 
       requestCurrentLocation: () => {
@@ -76,20 +96,16 @@ export const useWeatherStore = create<WeatherState>()(
             setLocation(
               position.coords.latitude,
               position.coords.longitude,
-              "Current Location"
+              "Current Location",
             );
             setIsLoadingLocation(false);
           },
           (err) => {
             setIsLoadingLocation(false);
             if (err.code === err.PERMISSION_DENIED) {
-              setLocationError(
-                "Location access denied. Enable it in browser settings."
-              );
+              setLocationError("Location access denied. Enable it in browser settings.");
             } else if (err.code === err.POSITION_UNAVAILABLE) {
-              setLocationError(
-                "Location unavailable. Search for a city instead."
-              );
+              setLocationError("Location unavailable. Search for a city instead.");
             } else {
               setLocationError("Unable to get location. Search for a city.");
             }
@@ -98,7 +114,7 @@ export const useWeatherStore = create<WeatherState>()(
             enableHighAccuracy: true,
             timeout: 10000,
             maximumAge: 0,
-          }
+          },
         );
       },
     }),
@@ -107,6 +123,6 @@ export const useWeatherStore = create<WeatherState>()(
       partialize: (state) => ({
         units: state.units,
       }),
-    }
-  )
+    },
+  ),
 );

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Layout } from "@/components/layout/Layout";
 import { WeatherDashboard } from "@/components/weather/WeatherDashboard";
@@ -8,28 +8,22 @@ import { useWeatherStore } from "@/store/weatherStore";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
-      retry: 2,
       staleTime: 1000 * 60 * 5,
+      retry: 1,
+      refetchOnWindowFocus: false,
     },
   },
 });
 
 function AppContent() {
-  const { requestCurrentLocation, location } = useWeatherStore();
-  const hasRequestedLocation = useRef<boolean | null>(null);
+  const { location, requestCurrentLocation } = useWeatherStore();
 
-  // Request geolocation on mount
-  if (hasRequestedLocation.current === null && !location) {
-    hasRequestedLocation.current = true;
-    const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
-    if (apiKey && typeof navigator !== "undefined" && navigator.geolocation) {
-      useWeatherStore.getState().setIsLoadingLocation(true);
+  useEffect(() => {
+    if (!location) {
       requestCurrentLocation();
     }
-  }
+  }, []);
 
-  // Check for API key
   const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
   if (!apiKey) {
     return <ApiKeyMissing />;

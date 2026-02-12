@@ -1,39 +1,43 @@
-import type { ForecastResponse, ForecastItem } from "@/types/weather";
-import { getWeatherIconUrl, formatTime, getTempUnit } from "@/api/weather";
+import { useMemo } from "react";
+import type { ForecastResponseType, ForecastItemType, UnitsType } from "@/types/weather-types";
+import { getWeatherIconUrl, formatTime } from "@/lib/weather-formatters";
+import { getTempUnit, getSpeedUnit } from "@/lib/weather-constants";
 import { Droplets, Wind, Thermometer } from "lucide-react";
 
-interface ForecastProps {
-  data: ForecastResponse;
-  units: "metric" | "imperial";
+interface ForecastPropsType {
+  data: ForecastResponseType;
+  units: UnitsType;
 }
 
-function groupByDay(list: ForecastItem[]): Record<string, ForecastItem[]> {
-  return list.reduce(
-    (acc, item) => {
-      const date = item.dt_txt.split(" ")[0];
-      if (!acc[date]) {
-        acc[date] = [];
-      }
-      acc[date].push(item);
-      return acc;
-    },
-    {} as Record<string, ForecastItem[]>,
-  );
+interface DailySummaryType {
+  minTemp: number;
+  maxTemp: number;
+  icon: string;
+  condition: string;
+  pop: number;
 }
 
-function getDailySummary(items: ForecastItem[]) {
+/** Groups forecast items by date string (YYYY-MM-DD). */
+function groupByDay(list: ForecastItemType[]): Record<string, ForecastItemType[]> {
+  const groups: Record<string, ForecastItemType[]> = {};
+  for (const item of list) {
+    const date = item.dt_txt.split(" ")[0];
+    (groups[date] ??= []).push(item);
+  }
+  return groups;
+}
+
+/** Computes a daily summary from a set of forecast items for the same day. */
+function getDailySummary(items: ForecastItemType[]): DailySummaryType {
   const temps = items.map((item) => item.main.temp);
   const minTemp = Math.min(...temps);
   const maxTemp = Math.max(...temps);
 
-  const conditionCounts = items.reduce(
-    (acc, item) => {
-      const condition = item.weather[0].main;
-      acc[condition] = (acc[condition] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>,
-  );
+  const conditionCounts: Record<string, number> = {};
+  for (const item of items) {
+    const condition = item.weather[0].main;
+    conditionCounts[condition] = (conditionCounts[condition] ?? 0) + 1;
+  }
 
   const mostCommonCondition = Object.entries(conditionCounts).sort(
     (a, b) => b[1] - a[1],
@@ -43,34 +47,29 @@ function getDailySummary(items: ForecastItem[]) {
     (item) =>
       item.weather[0].main === mostCommonCondition && item.sys.pod === "d",
   );
-  const icon = dayItem?.weather[0].icon || items[0].weather[0].icon;
+  const icon = dayItem?.weather[0].icon ?? items[0].weather[0].icon;
 
   const avgPop = items.reduce((sum, item) => sum + item.pop, 0) / items.length;
 
-  return {
-    minTemp,
-    maxTemp,
-    icon,
-    condition: mostCommonCondition,
-    pop: avgPop,
-  };
+  return { minTemp, maxTemp, icon, condition: mostCommonCondition, pop: avgPop };
 }
 
-export function Forecast({ data, units }: ForecastProps) {
+export function Forecast({ data, units }: ForecastPropsType) {
   const tempUnit = getTempUnit(units);
-  const speedUnit = units === "metric" ? "m/s" : "mph";
-  const groupedForecast = groupByDay(data.list);
+  const speedUnit = getSpeedUnit(units);
+
+  const groupedForecast = useMemo(() => groupByDay(data.list), [data.list]);
   const days = Object.keys(groupedForecast);
 
-  // Calculate global min/max for temperature bar visualization
-  const allSummaries = days.map((d) => getDailySummary(groupedForecast[d]));
-  const globalMin = Math.min(...allSummaries.map((s) => s.minTemp));
-  const globalMax = Math.max(...allSummaries.map((s) => s.maxTemp));
-  const tempRange = globalMax - globalMin;
+  const { allSummaries, globalMin, tempRange } = useMemo(() => {
+    const summaries = days.map((d) => getDailySummary(groupedForecast[d]));
+    const min = Math.min(...summaries.map((s) => s.minTemp));
+    const max = Math.max(...summaries.map((s) => s.maxTemp));
+    return { allSummaries: summaries, globalMin: min, tempRange: max - min };
+  }, [days, groupedForecast]);
 
   return (
     <div className="space-y-10">
-      {/* 5-Day Overview */}
       <section className="space-y-4">
         <h2 className="text-[11px] uppercase tracking-widest text-[hsl(var(--muted-foreground))] font-medium">
           5-Day Forecast
@@ -78,12 +77,10 @@ export function Forecast({ data, units }: ForecastProps) {
 
         <div className="space-y-1">
           {days.map((date, index) => {
-            const items = groupedForecast[date];
-            const summary = getDailySummary(items);
+            const summary = allSummaries[index];
             const dateObj = new Date(date);
             const isToday = index === 0;
 
-            // Calculate bar position and width
             const barStart = ((summary.minTemp - globalMin) / tempRange) * 100;
             const barWidth =
               ((summary.maxTemp - summary.minTemp) / tempRange) * 100;
@@ -93,14 +90,13 @@ export function Forecast({ data, units }: ForecastProps) {
                 key={date}
                 className="grid grid-cols-[1fr_auto_1fr] sm:grid-cols-[120px_80px_1fr_60px] items-center gap-3 py-3 border-b border-[hsl(var(--border))] last:border-0"
               >
-                {/* Day */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
                   <span className="text-sm font-medium">
                     {isToday
                       ? "Today"
                       : dateObj.toLocaleDateString("en-US", {
-                          weekday: "short",
-                        })}
+                        weekday: "short",
+                      })}
                   </span>
                   <span className="text-xs text-[hsl(var(--muted-foreground))] sm:hidden">
                     {dateObj.toLocaleDateString("en-US", {
@@ -110,7 +106,6 @@ export function Forecast({ data, units }: ForecastProps) {
                   </span>
                 </div>
 
-                {/* Icon & Precipitation - Center on mobile */}
                 <div className="flex flex-col items-center gap-1">
                   <img
                     src={getWeatherIconUrl(summary.icon, "2x")}
@@ -123,13 +118,11 @@ export function Forecast({ data, units }: ForecastProps) {
                   </div>
                 </div>
 
-                {/* Temperature Range */}
                 <div className="flex items-center gap-2 sm:gap-3 justify-end sm:justify-start">
                   <span className="text-sm font-medium w-8 text-right">
                     {Math.round(summary.minTemp)}°
                   </span>
 
-                  {/* Temperature Bar - Hidden on very small screens */}
                   <div className="hidden sm:block w-20 lg:w-32 h-1.5 bg-[hsl(var(--muted))] relative">
                     <div
                       className="absolute h-full bg-gradient-to-r from-[hsl(var(--muted-foreground))] to-[hsl(var(--foreground))]"
@@ -145,7 +138,6 @@ export function Forecast({ data, units }: ForecastProps) {
                   </span>
                 </div>
 
-                {/* Condition - Desktop only */}
                 <span className="hidden sm:block text-xs text-[hsl(var(--muted-foreground))] text-right truncate">
                   {summary.condition}
                 </span>
@@ -155,7 +147,6 @@ export function Forecast({ data, units }: ForecastProps) {
         </div>
       </section>
 
-      {/* Hourly Forecast */}
       <section className="space-y-4">
         <h2 className="text-[11px] uppercase tracking-widest text-[hsl(var(--muted-foreground))] font-medium">
           Hourly Forecast
@@ -171,11 +162,10 @@ export function Forecast({ data, units }: ForecastProps) {
               return (
                 <div
                   key={item.dt}
-                  className={`flex flex-col items-center py-4 px-3 sm:px-4 min-w-[60px] sm:min-w-[72px] ${
-                    isNow
-                      ? "bg-[hsl(var(--muted))]"
-                      : "hover:bg-[hsl(var(--muted))]/50"
-                  } transition-colors`}
+                  className={`flex flex-col items-center py-4 px-3 sm:px-4 min-w-[60px] sm:min-w-[72px] ${isNow
+                    ? "bg-[hsl(var(--muted))]"
+                    : "hover:bg-[hsl(var(--muted))]/50"
+                    } transition-colors`}
                 >
                   <span
                     className={`text-xs ${isNow ? "font-medium" : "text-[hsl(var(--muted-foreground))]"}`}
@@ -183,9 +173,9 @@ export function Forecast({ data, units }: ForecastProps) {
                     {isNow
                       ? "Now"
                       : formatTime(item.dt, 0, {
-                          hour: "numeric",
-                          minute: undefined,
-                        })}
+                        hour: "numeric",
+                        minute: undefined,
+                      })}
                   </span>
 
                   <img
@@ -211,7 +201,6 @@ export function Forecast({ data, units }: ForecastProps) {
         </div>
       </section>
 
-      {/* Detailed Forecast */}
       <section className="space-y-4">
         <h2 className="text-[11px] uppercase tracking-widest text-[hsl(var(--muted-foreground))] font-medium">
           Detailed Forecast
@@ -232,14 +221,12 @@ export function Forecast({ data, units }: ForecastProps) {
                   })}
                 </h3>
 
-                {/* Mobile: Vertical Stack / Desktop: Grid */}
                 <div className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-3">
                   {items.map((item) => (
                     <div
                       key={item.dt}
                       className="flex items-center justify-between sm:flex-col sm:items-start p-3 sm:p-4 border border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]/30 transition-colors"
                     >
-                      {/* Time & Icon */}
                       <div className="flex items-center gap-3 sm:w-full sm:justify-between sm:mb-3">
                         <span className="text-sm font-medium min-w-[56px]">
                           {formatTime(item.dt, 0)}
@@ -251,7 +238,6 @@ export function Forecast({ data, units }: ForecastProps) {
                         />
                       </div>
 
-                      {/* Temperature */}
                       <div className="flex items-baseline gap-1 sm:mb-2">
                         <span className="text-2xl sm:text-3xl font-light">
                           {Math.round(item.main.temp)}
@@ -261,7 +247,6 @@ export function Forecast({ data, units }: ForecastProps) {
                         </span>
                       </div>
 
-                      {/* Details - Desktop */}
                       <div className="hidden sm:block space-y-1.5 w-full">
                         <p className="text-xs text-[hsl(var(--muted-foreground))] capitalize truncate">
                           {item.weather[0].description}
@@ -285,7 +270,6 @@ export function Forecast({ data, units }: ForecastProps) {
                         </div>
                       </div>
 
-                      {/* Details - Mobile (compact) */}
                       <div className="flex sm:hidden items-center gap-3 text-[11px] text-[hsl(var(--muted-foreground))]">
                         <span className="flex items-center gap-1">
                           <Droplets className="h-3 w-3" strokeWidth={1.5} />

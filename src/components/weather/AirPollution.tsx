@@ -1,19 +1,25 @@
-import type { AirPollutionResponse } from "@/types/weather";
-import { getAQILabel } from "@/api/weather";
+import type { AirPollutionResponseType, AirQualityComponentsType } from "@/types/weather-types";
+import { getAQILabel } from "@/lib/weather-constants";
 
-interface AirPollutionProps {
-  data: AirPollutionResponse;
+interface AirPollutionPropsType {
+  data: AirPollutionResponseType;
 }
 
-interface PollutantInfo {
+interface PollutantInfoType {
   name: string;
-  key: keyof AirPollutionResponse["list"][0]["components"];
+  key: keyof AirQualityComponentsType;
   unit: string;
   description: string;
   thresholds: { good: number; moderate: number; unhealthy: number };
 }
 
-const pollutants: PollutantInfo[] = [
+interface PollutantLevelType {
+  level: string;
+  color: string;
+  barColor: string;
+}
+
+const POLLUTANTS: PollutantInfoType[] = [
   {
     name: "CO",
     key: "co",
@@ -58,34 +64,31 @@ const pollutants: PollutantInfo[] = [
   },
 ];
 
+const HEALTH_ADVISORIES: Record<number, string> = {
+  1: "Air quality is satisfactory. Perfect for outdoor activities.",
+  2: "Air quality is acceptable. Unusually sensitive individuals should consider limiting prolonged outdoor exertion.",
+  3: "Sensitive groups may experience health effects. Consider reducing prolonged outdoor exertion.",
+  4: "Health alert: everyone may begin to experience health effects. Avoid prolonged outdoor exertion.",
+  5: "Health warning: entire population is likely to be affected. Avoid all outdoor activities.",
+};
+
 function getPollutantLevel(
   value: number,
-  thresholds: { good: number; moderate: number; unhealthy: number },
-): { level: string; color: string; barColor: string } {
+  thresholds: PollutantInfoType["thresholds"],
+): PollutantLevelType {
   if (value <= thresholds.good) {
     return { level: "Good", color: "text-green-500", barColor: "bg-green-500" };
-  } else if (value <= thresholds.moderate) {
-    return {
-      level: "Moderate",
-      color: "text-yellow-500",
-      barColor: "bg-yellow-500",
-    };
-  } else if (value <= thresholds.unhealthy) {
-    return {
-      level: "Unhealthy",
-      color: "text-orange-500",
-      barColor: "bg-orange-500",
-    };
-  } else {
-    return {
-      level: "Very Unhealthy",
-      color: "text-red-500",
-      barColor: "bg-red-500",
-    };
   }
+  if (value <= thresholds.moderate) {
+    return { level: "Moderate", color: "text-yellow-500", barColor: "bg-yellow-500" };
+  }
+  if (value <= thresholds.unhealthy) {
+    return { level: "Unhealthy", color: "text-orange-500", barColor: "bg-orange-500" };
+  }
+  return { level: "Very Unhealthy", color: "text-red-500", barColor: "bg-red-500" };
 }
 
-export function AirPollution({ data }: AirPollutionProps) {
+export function AirPollution({ data }: AirPollutionPropsType) {
   const pollution = data.list[0];
   const aqi = pollution.main.aqi;
   const aqiInfo = getAQILabel(aqi);
@@ -93,7 +96,6 @@ export function AirPollution({ data }: AirPollutionProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-[11px] uppercase tracking-widest text-[hsl(var(--muted-foreground))] font-medium">
           Air Quality
@@ -103,7 +105,6 @@ export function AirPollution({ data }: AirPollutionProps) {
         </span>
       </div>
 
-      {/* AQI Scale */}
       <div className="space-y-3">
         <div className="flex h-1.5 overflow-hidden">
           <div className="flex-1 bg-green-500" />
@@ -127,12 +128,10 @@ export function AirPollution({ data }: AirPollutionProps) {
         </div>
       </div>
 
-      {/* Divider */}
       <div className="border-t border-[hsl(var(--border))]" />
 
-      {/* Pollutants Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
-        {pollutants.map((pollutant) => {
+        {POLLUTANTS.map((pollutant) => {
           const value = components[pollutant.key];
           const { barColor } = getPollutantLevel(value, pollutant.thresholds);
           const percentage = Math.min(
@@ -163,19 +162,9 @@ export function AirPollution({ data }: AirPollutionProps) {
         })}
       </div>
 
-      {/* Health Advisory */}
       <div className="pt-4 border-t border-[hsl(var(--border))]">
         <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">
-          {aqi === 1 &&
-            "Air quality is satisfactory. Perfect for outdoor activities."}
-          {aqi === 2 &&
-            "Air quality is acceptable. Unusually sensitive individuals should consider limiting prolonged outdoor exertion."}
-          {aqi === 3 &&
-            "Sensitive groups may experience health effects. Consider reducing prolonged outdoor exertion."}
-          {aqi === 4 &&
-            "Health alert: everyone may begin to experience health effects. Avoid prolonged outdoor exertion."}
-          {aqi === 5 &&
-            "Health warning: entire population is likely to be affected. Avoid all outdoor activities."}
+          {HEALTH_ADVISORIES[aqi]}
         </p>
       </div>
     </div>

@@ -1,17 +1,12 @@
 import { Droplets, Wind, Eye, Gauge, Sunrise, Sunset } from "lucide-react";
-import type { CurrentWeatherResponse } from "@/types/weather";
-import {
-  getWeatherIconUrl,
-  formatTime,
-  getWindDirection,
-  formatVisibility,
-  getTempUnit,
-  getSpeedUnit,
-} from "@/api/weather";
+import type { CurrentWeatherResponseType, UnitsType } from "@/types/weather-types";
+import { getWeatherIconUrl, formatTime, formatVisibility } from "@/lib/weather-formatters";
+import { getWindDirection, getTempUnit, getSpeedUnit } from "@/lib/weather-constants";
+import { DetailItem } from "./DetailItem";
 
-interface CurrentWeatherProps {
-  data: CurrentWeatherResponse;
-  units: "metric" | "imperial";
+interface CurrentWeatherPropsType {
+  data: CurrentWeatherResponseType;
+  units: UnitsType;
   locationName?: string;
 }
 
@@ -19,14 +14,13 @@ export function CurrentWeather({
   data,
   units,
   locationName,
-}: CurrentWeatherProps) {
+}: CurrentWeatherPropsType) {
   const tempUnit = getTempUnit(units);
   const speedUnit = getSpeedUnit(units);
   const weather = data.weather[0];
 
   return (
     <div className="space-y-8">
-      {/* Location & Date */}
       <div className="space-y-1">
         <h1 className="text-lg font-medium tracking-tight">
           {locationName || `${data.name}, ${data.sys.country}`}
@@ -40,7 +34,6 @@ export function CurrentWeather({
         </p>
       </div>
 
-      {/* Main Temperature */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <div className="text-7xl font-extralight tracking-tighter">
@@ -67,7 +60,6 @@ export function CurrentWeather({
         </div>
       </div>
 
-      {/* Temperature Range */}
       <div className="flex items-center gap-4 text-sm">
         <span>
           H: {Math.round(data.main.temp_max)}
@@ -80,10 +72,8 @@ export function CurrentWeather({
         </span>
       </div>
 
-      {/* Divider */}
       <div className="border-t border-[hsl(var(--border))]" />
 
-      {/* Weather Details Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
         <DetailItem
           icon={<Droplets className="h-4 w-4" strokeWidth={1.5} />}
@@ -119,7 +109,6 @@ export function CurrentWeather({
         />
       </div>
 
-      {/* Additional Details */}
       {(data.clouds || data.rain || data.snow || data.wind.gust) && (
         <>
           <div className="border-t border-[hsl(var(--border))]" />
@@ -153,35 +142,8 @@ export function CurrentWeather({
         </>
       )}
 
-      {/* Coordinates */}
       <div className="text-xs text-[hsl(var(--muted-foreground))]">
         {data.coord.lat.toFixed(4)}°N, {data.coord.lon.toFixed(4)}°E
-      </div>
-    </div>
-  );
-}
-
-interface DetailItemProps {
-  icon?: React.ReactNode;
-  label: string;
-  value: string;
-  subValue?: string;
-}
-
-function DetailItem({ icon, label, value, subValue }: DetailItemProps) {
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-2 text-[hsl(var(--muted-foreground))]">
-        {icon}
-        <span className="text-xs uppercase tracking-wide">{label}</span>
-      </div>
-      <div className="font-medium">
-        {value}
-        {subValue && (
-          <span className="text-[hsl(var(--muted-foreground))] ml-1 font-normal">
-            {subValue}
-          </span>
-        )}
       </div>
     </div>
   );
